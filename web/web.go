@@ -244,17 +244,18 @@ func (s *Server) index(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := formData{
-		Name:     "",
-		MaxTime:  "10m",
-		Keywords: []string{},
-		Language: "en",
-		Zoom:     15,
-		FastMode: false,
-		Radius:   10000,
-		Lat:      "0",
-		Lon:      "0",
-		Depth:    10,
-		Email:    false,
+		Name:         "",
+		MaxTime:      "10m",
+		Keywords:     []string{},
+		Language:     "br",
+		Zoom:         15,
+		FastMode:     false,
+		Radius:       10000,
+		Lat:          "0",
+		Lon:          "0",
+		Depth:        10,
+		Email:        true,
+		ExtraReviews: true,
 	}
 
 	_ = tmpl.Execute(w, data)

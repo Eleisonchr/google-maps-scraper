@@ -1,7 +1,7 @@
 <tbody id="job-tbody" hx-get="/jobs?page={{.CurrentPage}}" hx-trigger="every 10s" hx-swap="outerHTML">
 {{range .Jobs}}
 <tr>
-    <td>{{.ID}}</td>
+    <td class="job-id">{{.ID}}</td>
     <td>{{.Name}}</td>
     <td>{{.Date}}</td>
     <td>
