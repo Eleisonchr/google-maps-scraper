@@ -2,7 +2,9 @@ package web
 
 import (
 	"context"
+	"encoding/csv"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -147,4 +149,40 @@ func (s *Service) GetCSV(_ context.Context, id string) (string, error) {
 	}
 
 	return datapath, nil
+}
+
+// ContarRegistros conta os registros do CSV, sem o cabecalho, incluindo locais sem coordenadas.
+func (s *Service) ContarRegistros(ctx context.Context, id string) (int, error) {
+	caminho, err := s.csvPath(id)
+	if err != nil {
+		return 0, err
+	}
+	arquivo, err := os.Open(caminho)
+	if err != nil {
+		return 0, err
+	}
+	defer func() {
+		_ = arquivo.Close()
+	}()
+
+	leitor := csv.NewReader(arquivo)
+	if _, err := leitor.Read(); err != nil {
+		if err == io.EOF {
+			return 0, nil
+		}
+		return 0, err
+	}
+	total := 0
+	for {
+		if err := ctx.Err(); err != nil {
+			return 0, err
+		}
+		if _, err := leitor.Read(); err != nil {
+			if err == io.EOF {
+				return total, nil
+			}
+			return 0, err
+		}
+		total++
+	}
 }

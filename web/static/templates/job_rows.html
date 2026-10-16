@@ -7,6 +7,7 @@
     <td>
         <span class="status-indicator status-{{.Status}}">{{if eq .Status "pending"}}Pendente{{else if eq .Status "working"}}Em andamento{{else if eq .Status "ok"}}Concluída{{else if eq .Status "failed"}}Falhou{{else}}{{.Status}}{{end}}</span>
     </td>
+    <td class="total-registros">{{if .TotalRegistros}}{{.TotalRegistros}}{{else}}<span title="Total disponível após a conclusão, quando o CSV puder ser lido.">—</span>{{end}}</td>
     <td>
         {{ if eq .Status "ok" }}
             <button type="button" class="button view-button"
@@ -25,12 +26,12 @@
 {{end}}
 {{if eq (len .Jobs) 0}}
 <tr>
-    <td colspan="5" style="text-align: center; padding: 1rem;">Nenhum resultado</td>
+    <td colspan="6" style="text-align: center; padding: 1rem;">Nenhum resultado</td>
 </tr>
 {{end}}
 {{if .HasPages}}
 <tr class="pagination-row">
-    <td colspan="5">
+    <td colspan="6">
         <div class="pagination" style="display: flex; justify-content: center; align-items: center; gap: 1rem; margin-top: 1rem;">
             {{if .HasPrev}}
             <button class="button" hx-get="/jobs?page={{.PrevPage}}" hx-target="#job-tbody" hx-swap="outerHTML">Anterior</button>

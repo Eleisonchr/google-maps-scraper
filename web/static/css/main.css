@@ -84,6 +84,7 @@ th, td { text-align: left; padding: 16px; border-bottom: 1px solid #e9edf1; }
 th { background: #f9fafb; color: var(--color-text-light); font-size: 11px; text-transform: uppercase; letter-spacing: .06em; font-weight: 650; white-space: nowrap; }
 tr:last-child td { border-bottom: 0; }
 #job-table .job-id { display: none; }
+#job-table .total-registros { text-align: right; font-variant-numeric: tabular-nums; }
 #job-tbody tr:not(.pagination-row):hover { background: #fafbfc; }
 #job-tbody td:nth-child(2) { font-weight: 600; overflow-wrap: anywhere; }
 #job-tbody td:nth-child(3) { color: var(--color-text-light); font-size: 12px; min-width: 140px; }
@@ -235,4 +236,33 @@ tr:last-child td { border-bottom: 0; }
     .map-modal-body { flex-direction: column; }
     #job-map { min-height: 0; }
     #job-places-list { max-width: none; min-width: 0; max-height: 30%; }
+}
+
+.botao-mapa { width: 100%; }
+.seletor-localizacao {
+    width: min(960px, calc(100% - 32px));
+    max-height: calc(100dvh - 32px);
+    padding: 24px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    color: var(--color-text);
+    background: var(--color-surface);
+}
+.seletor-localizacao[open] { display: flex; flex-direction: column; gap: 16px; }
+.seletor-localizacao::backdrop { background: rgba(25, 35, 45, .5); }
+.seletor-localizacao [hidden] { display: none; }
+.cabecalho-seletor { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; }
+.cabecalho-seletor h2 { margin: 0; font-size: 21px; }
+.cabecalho-seletor p, .mensagem-seletor, .aviso-seletor { margin: 4px 0 0; font-size: 13px; color: var(--color-text-light); }
+.botao-secundario { color: var(--color-primary); background: #fff; border-color: var(--color-border); }
+.botao-secundario:hover { color: var(--color-primary); background: var(--color-background); }
+#mapaLocalizacao { height: clamp(260px, 48dvh, 480px); min-height: 260px; flex-shrink: 0; border: 1px solid var(--color-border); border-radius: 8px; background: #e9edf1; }
+.marcador-raio { border: 4px solid var(--color-primary); border-radius: 50%; background: #fff; box-shadow: 0 1px 5px #34445366; cursor: ew-resize; }
+.controles-seletor { display: grid; grid-template-columns: auto 160px minmax(0, 1fr); align-items: center; gap: 20px; }
+.controles-seletor output { font-size: 12px; font-variant-numeric: tabular-nums; }
+.acoes-seletor { display: flex; justify-content: flex-end; gap: 10px; padding-top: 8px; }
+@media (max-width: 800px) {
+    .seletor-localizacao { padding: 16px; }
+    .controles-seletor { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+    .acoes-seletor { flex-wrap: wrap; }
 }

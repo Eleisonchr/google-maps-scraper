@@ -11,6 +11,7 @@ import (
 	"io"
 	"io/fs"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -337,8 +338,16 @@ func (s *Server) scrape(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newJob.Data.Lat = r.Form.Get("latitude")
-	newJob.Data.Lon = r.Form.Get("longitude")
+	newJob.Data.Lat, err = normalizarCoordenadaFormulario(r.Form.Get("latitude"), 90)
+	if err != nil {
+		http.Error(w, "Latitude inválida. Use um valor entre -90 e 90, com ponto ou vírgula decimal.", http.StatusUnprocessableEntity)
+		return
+	}
+	newJob.Data.Lon, err = normalizarCoordenadaFormulario(r.Form.Get("longitude"), 180)
+	if err != nil {
+		http.Error(w, "Longitude inválida. Use um valor entre -180 e 180, com ponto ou vírgula decimal.", http.StatusUnprocessableEntity)
+		return
+	}
 
 	newJob.Data.Depth, err = strconv.Atoi(r.Form.Get("depth"))
 	if err != nil {
@@ -381,6 +390,11 @@ func (s *Server) scrape(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+type linhaBusca struct {
+	Job
+	TotalRegistros *int
+}
+
 func (s *Server) renderJobsPage(ctx context.Context, w io.Writer, page int) error {
 	tmpl, ok := s.tmpl["static/templates/job_rows.html"]
 	if !ok {
@@ -392,8 +406,22 @@ func (s *Server) renderJobsPage(ctx context.Context, w io.Writer, page int) erro
 		return fmt.Errorf("list jobs: %w", err)
 	}
 
+	linhas := make([]linhaBusca, len(jobPage.Jobs))
+	for indice, busca := range jobPage.Jobs {
+		linhas[indice].Job = busca
+		if busca.Status == StatusOK {
+			if total, err := s.svc.ContarRegistros(ctx, busca.ID); err == nil {
+				linhas[indice].TotalRegistros = &total
+			}
+		}
+	}
+	dados := struct {
+		JobPage
+		Jobs []linhaBusca
+	}{JobPage: jobPage, Jobs: linhas}
+
 	var output bytes.Buffer
-	if err := tmpl.Execute(&output, jobPage); err != nil {
+	if err := tmpl.Execute(&output, dados); err != nil {
 		return fmt.Errorf("render jobs: %w", err)
 	}
 
@@ -697,6 +725,18 @@ func renderJSON(w http.ResponseWriter, code int, data any) {
 	w.WriteHeader(code)
 
 	_ = json.NewEncoder(w).Encode(data)
+}
+
+func normalizarCoordenadaFormulario(valor string, limite float64) (string, error) {
+	valor = strings.TrimSpace(valor)
+	if valor == "" {
+		return "", nil
+	}
+	coordenada, err := strconv.ParseFloat(strings.ReplaceAll(valor, ",", "."), 64)
+	if err != nil || math.IsNaN(coordenada) || math.IsInf(coordenada, 0) || math.Abs(coordenada) > limite {
+		return "", errors.New("coordenada invalida")
+	}
+	return strconv.FormatFloat(coordenada, 'f', -1, 64), nil
 }
 
 func traduzirErroFormulario(err error) string {

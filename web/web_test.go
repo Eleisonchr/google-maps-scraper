@@ -203,6 +203,31 @@ func TestIndexScrapeFormReplacesPaginatedJobs(t *testing.T) {
 	}
 }
 
+func TestGridExibeTotalRegistros(t *testing.T) {
+	buscas := paginatedJobs(4)
+	for indice := range buscas {
+		buscas[indice].Status = StatusOK
+	}
+	buscas[3].Status = StatusWorking
+	servidor := newTestServerWithRepo(t, &mockJobRepo{jobs: buscas})
+	writeCSV(t, servidor.svc.dataFolder, buscas[0].ID, "title,latitude,longitude\nLocal,1,2\nSem coordenadas,,\n")
+	writeCSV(t, servidor.svc.dataFolder, buscas[1].ID, "title,latitude,longitude\n")
+	resposta := httptest.NewRecorder()
+	servidor.getJobs(resposta, httptest.NewRequest(http.MethodGet, "/jobs", http.NoBody))
+	if resposta.Code != http.StatusOK {
+		t.Fatalf("status inesperado: %d", resposta.Code)
+	}
+	corpo := resposta.Body.String()
+	for _, esperado := range []string{`class="total-registros">2</td>`, `class="total-registros">0</td>`} {
+		if !strings.Contains(corpo, esperado) {
+			t.Fatalf("total ausente: %s", corpo)
+		}
+	}
+	if strings.Count(corpo, `title="Total disponível após a conclusão, quando o CSV puder ser lido."`) != 2 {
+		t.Fatalf("buscas em andamento ou sem CSV devem indicar indisponibilidade: %s", corpo)
+	}
+}
+
 func TestScrapeRendersFirstPageAfterCreatingJob(t *testing.T) {
 	repo := &mutableJobRepo{mockJobRepo: mockJobRepo{jobs: paginatedJobs(20)}}
 	srv := newTestServerWithRepo(t, repo)
@@ -271,7 +296,7 @@ func TestScrapeExtraReviews(t *testing.T) {
 func TestApiAceitaExtraReviews(t *testing.T) {
 	repositorio := &mutableJobRepo{}
 	servidor := newTestServerWithRepo(t, repositorio)
-	corpo := `{"name":"avaliacoes","keywords":["coffee"],"lang":"en","depth":10,"max_time":240,"extra_reviews":true}`
+	corpo := `{"name":"avaliacoes","keywords":["coffee"],"lang":"en","depth":10,"max_time":240,"extra_reviews":true,"lat":"-23.55","lon":"-46.63"}`
 	requisicao := httptest.NewRequest(http.MethodPost, "/api/v1/jobs", strings.NewReader(corpo))
 	requisicao.Header.Set("Content-Type", "application/json")
 	resposta := httptest.NewRecorder()
@@ -281,6 +306,51 @@ func TestApiAceitaExtraReviews(t *testing.T) {
 	}
 	if len(repositorio.jobs) != 1 || !repositorio.jobs[0].Data.ExtraReviews {
 		t.Fatalf("opcao nao persistida pela API: %+v", repositorio.jobs)
+	}
+	if repositorio.jobs[0].Data.Lat != "-23.55" || repositorio.jobs[0].Data.Lon != "-46.63" {
+		t.Fatalf("coordenadas da API foram alteradas: %+v", repositorio.jobs[0].Data)
+	}
+}
+
+func TestFormularioAceitaSeparadoresDecimais(t *testing.T) {
+	for _, caso := range []struct {
+		latitude  string
+		longitude string
+		valido    bool
+	}{
+		{latitude: "-23,55", longitude: "-46,63", valido: true},
+		{latitude: "-23.55", longitude: "-46.63", valido: true},
+		{latitude: " -23,55 ", longitude: "-46.63", valido: true},
+		{latitude: "91", longitude: "-46,63", valido: false},
+		{latitude: "-23,55", longitude: "181", valido: false},
+		{latitude: "-23,5.5", longitude: "-46,63", valido: false},
+		{latitude: "NaN", longitude: "-46,63", valido: false},
+	} {
+		t.Run(caso.latitude+"/"+caso.longitude, func(t *testing.T) {
+			repositorio := &mutableJobRepo{}
+			servidor := newTestServerWithRepo(t, repositorio)
+			formulario := url.Values{
+				"name": {"coordenadas"}, "maxtime": {"4m"}, "keywords": {"cafeterias"},
+				"lang": {"br"}, "zoom": {"15"}, "radius": {"10000"}, "depth": {"10"},
+				"latitude": {caso.latitude}, "longitude": {caso.longitude},
+			}
+			requisicao := httptest.NewRequest(http.MethodPost, "/scrape", strings.NewReader(formulario.Encode()))
+			requisicao.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			resposta := httptest.NewRecorder()
+			servidor.scrape(resposta, requisicao)
+			if !caso.valido {
+				if resposta.Code != http.StatusUnprocessableEntity || len(repositorio.jobs) != 0 {
+					t.Fatalf("coordenadas invalidas aceitas: %d", resposta.Code)
+				}
+				return
+			}
+			if resposta.Code != http.StatusOK || len(repositorio.jobs) != 1 {
+				t.Fatalf("falha ao criar busca: %d: %s", resposta.Code, resposta.Body.String())
+			}
+			if repositorio.jobs[0].Data.Lat != "-23.55" || repositorio.jobs[0].Data.Lon != "-46.63" {
+				t.Fatalf("coordenadas nao normalizadas: %+v", repositorio.jobs[0].Data)
+			}
+		})
 	}
 }
 

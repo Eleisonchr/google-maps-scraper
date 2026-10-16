@@ -16,6 +16,27 @@ func writeCSV(t *testing.T, dir, id, content string) {
 	}
 }
 
+func TestContarRegistros(t *testing.T) {
+	for _, caso := range []struct {
+		nome  string
+		csv   string
+		total int
+	}{
+		{nome: "arquivo vazio", csv: "", total: 0},
+		{nome: "somente cabecalho", csv: "title,latitude,longitude\n", total: 0},
+		{nome: "multiplas linhas e local sem coordenadas", csv: "title,latitude,longitude\n\"Nome com\nquebra\",1,2\nSem coordenadas,,\n", total: 2},
+	} {
+		t.Run(caso.nome, func(t *testing.T) {
+			pasta := t.TempDir()
+			writeCSV(t, pasta, "busca", caso.csv)
+			total, err := NewService(nil, pasta).ContarRegistros(context.Background(), "busca")
+			if err != nil || total != caso.total {
+				t.Fatalf("total = %d, erro = %v; esperado %d", total, err, caso.total)
+			}
+		})
+	}
+}
+
 func TestGetPlacesParsesCSV(t *testing.T) {
 	dir := t.TempDir()
 	svc := NewService(nil, dir)

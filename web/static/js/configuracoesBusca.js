@@ -5,12 +5,18 @@
     if (!formulario) return;
 
     const chaveArmazenamento = 'scraper.configuracoesBusca.v1';
-    const campos = formulario.querySelectorAll('input[name], textarea[name], select[name]');
+    const campos = Array.from(formulario.querySelectorAll('input[name], textarea[name], select[name]'))
+        .filter((campo) => campo.name !== 'name' && campo.name !== 'keywords');
 
     function restaurarConfiguracoes() {
         try {
             const configuracoes = JSON.parse(localStorage.getItem(chaveArmazenamento));
             if (!configuracoes || typeof configuracoes !== 'object' || Array.isArray(configuracoes)) return;
+
+            const possuiDadosBusca = Object.prototype.hasOwnProperty.call(configuracoes, 'name')
+                || Object.prototype.hasOwnProperty.call(configuracoes, 'keywords');
+            delete configuracoes.name;
+            delete configuracoes.keywords;
 
             campos.forEach((campo) => {
                 if (!Object.prototype.hasOwnProperty.call(configuracoes, campo.name)) return;
@@ -21,6 +27,10 @@
                     campo.value = valor;
                 }
             });
+
+            if (possuiDadosBusca) {
+                localStorage.setItem(chaveArmazenamento, JSON.stringify(configuracoes));
+            }
         } catch (erro) {
             console.warn('Não foi possível restaurar as configurações da busca.', erro);
         }

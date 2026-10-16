@@ -6,7 +6,9 @@
     <title>Google Maps Scraper</title>
     <link rel="stylesheet" href="/static/css/main.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/htmx/1.9.6/htmx.min.js"></script>
+    <script src="/static/js/coordenadasFormulario.js" defer></script>
     <script src="/static/js/configuracoesBusca.js" defer></script>
+    <script src="/static/js/seletorLocalizacao.js" defer></script>
 </head>
 <body>
     <div class="app-container">
@@ -58,12 +60,15 @@
                             </div>
                             <div class="form-group">
                                 <label for="latitude">Latitude:</label>
-                                <input type="number" step="0.000000000000001" id="latitude" name="latitude" value="{{.Lat}}">
+                                <input type="text" inputmode="decimal" id="latitude" name="latitude" value="{{.Lat}}" aria-describedby="ajudaCoordenadas">
                             </div>
                             <div class="form-group">
                                 <label for="longitude">Longitude:</label>
-                                <input type="number" step="0.000000000000001" id="longitude" name="longitude" value="{{.Lon}}">
+                                <input type="text" inputmode="decimal" id="longitude" name="longitude" value="{{.Lon}}" aria-describedby="ajudaCoordenadas">
                             </div>
+                            <p id="ajudaCoordenadas" class="text-muted">Use ponto ou vírgula como separador decimal. Ex.: -23.5505 ou -23,5505.</p>
+                            <button type="button" id="abrirSeletorLocalizacao" class="botao-mapa">Selecionar no mapa</button>
+                            <p class="text-muted">Escolha o ponto e ajuste o raio visualmente.</p>
                         </fieldset>
                     </details>
                     
@@ -121,6 +126,7 @@
                             <th>Nome da busca</th>
                             <th>Data da busca</th>
                             <th>Situação</th>
+                            <th class="total-registros">Registros</th>
                             <th>Ações</th>
                         </tr>
                     </thead>
@@ -135,6 +141,32 @@
     </div>
 
     <div id="map-modal-container"></div>
+
+    <dialog id="seletorLocalizacao" class="seletor-localizacao" aria-labelledby="tituloSeletorLocalizacao">
+        <div class="cabecalho-seletor">
+            <div>
+                <h2 id="tituloSeletorLocalizacao">Área da busca</h2>
+                <p>Clique no mapa para marcar o ponto. Arraste a borda para ajustar o raio.</p>
+            </div>
+            <button type="button" id="fecharSeletorLocalizacao" class="botao-secundario" aria-label="Fechar mapa">Fechar</button>
+        </div>
+        <p id="mensagemSeletorLocalizacao" class="mensagem-seletor" role="status"></p>
+        <button type="button" id="recarregarMapaLocalizacao" class="botao-secundario" hidden>Tentar novamente</button>
+        <div id="mapaLocalizacao" aria-label="Mapa para selecionar o ponto e o raio da busca"></div>
+        <div class="controles-seletor">
+            <button type="button" id="marcarCentroLocalizacao" class="botao-secundario" disabled>Marcar no centro do mapa</button>
+            <div>
+                <label for="raioLocalizacao">Raio em metros:</label>
+                <input type="number" id="raioLocalizacao" min="1" step="1" value="10000">
+            </div>
+            <output id="coordenadasLocalizacao">Nenhum ponto selecionado.</output>
+        </div>
+        <p class="aviso-seletor">O raio é utilizado no modo rápido. No modo padrão, o ponto e o zoom orientam a busca.</p>
+        <div class="acoes-seletor">
+            <button type="button" id="cancelarSeletorLocalizacao" class="botao-secundario">Cancelar</button>
+            <button type="button" id="aplicarLocalizacao" disabled>Usar esta localização</button>
+        </div>
+    </dialog>
 
 </body>
 </html>
