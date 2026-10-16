@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 type mutableJobRepo struct {
@@ -145,7 +146,9 @@ func newTestServerWithRepo(t *testing.T, repo JobRepository) *Server {
 }
 
 func TestGetJobsHTMXTriggerIsPollingOnly(t *testing.T) {
-	srv := newTestServerWithRepo(t, &mockJobRepo{jobs: paginatedJobs(1)})
+	buscas := paginatedJobs(1)
+	buscas[0].Date = time.Date(2026, time.October, 16, 14, 5, 30, 0, time.UTC)
+	srv := newTestServerWithRepo(t, &mockJobRepo{jobs: buscas})
 
 	req := httptest.NewRequest(http.MethodGet, "/jobs", http.NoBody)
 	rec := httptest.NewRecorder()
@@ -156,6 +159,9 @@ func TestGetJobsHTMXTriggerIsPollingOnly(t *testing.T) {
 	}
 
 	body := rec.Body.String()
+	if !strings.Contains(body, "16/10/2026 14:05") {
+		t.Fatalf("data da busca sem o formato esperado: %s", body)
+	}
 
 	// The returned tbody must only poll; it must NOT contain "load" in hx-trigger
 	// because load on an outerHTML-swapped element would cause an immediate reload loop.
@@ -227,7 +233,7 @@ func TestScrapeRendersFirstPageAfterCreatingJob(t *testing.T) {
 		t.Fatal("scrape response must contain the complete paginated job body")
 	}
 
-	if !strings.Contains(body, "new-job") || !strings.Contains(body, "Page 1 of 2") {
+	if !strings.Contains(body, "new-job") || !strings.Contains(body, "Página 1 de 2") {
 		t.Fatalf("unexpected scrape response: %s", body)
 	}
 

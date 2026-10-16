@@ -1,29 +1,30 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Google Maps Scraper</title>
     <link rel="stylesheet" href="/static/css/main.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/htmx/1.9.6/htmx.min.js"></script>
+    <script src="/static/js/configuracoesBusca.js" defer></script>
 </head>
 <body>
     <div class="app-container">
         <header class="app-header">
             <div>
-                <p class="app-eyebrow">LOCAL BUSINESS DISCOVERY</p>
+                <p class="app-eyebrow">DESCUBRA NEGÓCIOS LOCAIS</p>
                 <h1>Google Maps Scraper</h1>
-                <p class="app-description">Find places, collect details and organize your next search.</p>
+                <p class="app-description">Encontre locais, colete informações e organize suas próximas buscas.</p>
             </div>
-            <nav aria-label="Resources">
-                <a href="/api/docs" target="_blank" rel="noopener noreferrer">API Documentation <span aria-hidden="true">↗</span></a>
+            <nav aria-label="Recursos">
+                <a href="/api/docs" target="_blank" rel="noopener noreferrer">Documentação da API <span aria-hidden="true">↗</span></a>
             </nav>
         </header>
         <main>
             <div class="sidebar">
-                <div class="section-heading"><h2>New search</h2><p>Choose what you want to discover.</p></div>
+                <div class="section-heading"><h2>Nova busca</h2><p>Escolha o que você quer encontrar.</p></div>
                 <div id="error-container" class="error-message" role="alert"></div>
-                <form 
+                <form id="formularioBusca"
                     hx-post="/scrape" 
                     hx-target="#job-tbody"
                     hx-swap="outerHTML"
@@ -33,23 +34,23 @@
                 >
                     
                     <fieldset>
-                        <legend>Job Details</legend>
+                        <legend>Detalhes da busca</legend>
                         <div class="form-group">
-                            <label for="name">Job Name:</label>
-                            <input type="text" id="name" name="name" value="{{.Name}}" placeholder="e.g. Coffee shops in São Paulo">
+                            <label for="name">Nome da busca:</label>
+                            <input type="text" id="name" name="name" value="{{.Name}}" placeholder="Ex.: Cafeterias em São Paulo">
                         </div>
                         <div class="form-group">
-                            <label for="keywords">Keywords:</label>
-                            <textarea id="keywords" name="keywords" rows="5" placeholder="Coffee shops in São Paulo&#10;Restaurants in Campinas">{{ .KeywordsString }}</textarea>
+                            <label for="keywords">Termos de busca:</label>
+                            <textarea id="keywords" name="keywords" rows="5" placeholder="Cafeterias em São Paulo&#10;Restaurantes em Campinas">{{ .KeywordsString }}</textarea>
                         </div>
                         <div class="form-group">
-                            <label for="lang">Language:</label>
+                            <label for="lang">Idioma:</label>
                             <input type="text" id="lang" name="lang" value="{{.Language}}">
                         </div>
                     </fieldset>
                     
                     <details class="expandable-section">
-                        <summary>Location Settings</summary>
+                        <summary>Localização</summary>
                         <fieldset>
                             <div class="form-group">
                                 <label for="zoom">Zoom:</label>
@@ -67,30 +68,30 @@
                     </details>
                     
                     <details class="expandable-section">
-                        <summary>Advanced Options</summary>
+                        <summary>Opções avançadas</summary>
                         <fieldset>
                             <div class="form-group">
-                                <label for="fastmode">Fast Mode (BETA):</label>
+                                <label for="fastmode">Modo rápido (BETA):</label>
                                 <input type="checkbox" id="fastmode" name="fastmode" {{if .FastMode}}checked{{end}}>
                             </div>
                             <div class="form-group">
-                                    <label for="radius">Radius (BETA):</label>
+                                    <label for="radius">Raio em metros (BETA):</label>
                                     <input type="number" id="radius" name="radius" value="{{.Radius}}">
                             </div>
                             <div class="form-group">
-                                <label for="depth">Depth:</label>
+                                <label for="depth">Profundidade:</label>
                                 <input type="number" step="1" id="depth" name="depth" value="{{.Depth}}">
                             </div>
                             <div class="form-group checkbox">
                                 <input type="checkbox" id="email" name="email" {{if .Email}}checked{{end}}>
-                                <label for="email">Fetch Emails</label>
+                                <label for="email">Coletar e-mails</label>
                             </div>
                             <div class="form-group checkbox">
                                 <input type="checkbox" id="extra_reviews" name="extra_reviews" {{if .ExtraReviews}}checked{{end}}>
-                                <label for="extra_reviews">Fetch Extra Reviews (experimental)</label>
+                                <label for="extra_reviews">Coletar avaliações extras (experimental)</label>
                             </div>
                             <div class="form-group">
-                                <label for="maxtime">Max job time:</label>
+                                <label for="maxtime">Tempo máximo da busca:</label>
                                 <input type="text" id="maxtime" name="maxtime" value="{{.MaxTime}}">
                             </div>
                         </fieldset>
@@ -99,28 +100,28 @@
                         <summary>Proxies</summary>
                         <fieldset>
                             <div class="form-group">
-                                <label for="proxies">Proxies:(one per line)</label>
-                                <p class="text-muted">One proxy per line. Example: http://username:password@proxy.local:443</p>
+                                <label for="proxies">Proxies (um por linha):</label>
+                                <p class="text-muted">Um proxy por linha. Exemplo: http://usuario:senha@proxy.local:443</p>
                                 <textarea id="proxies" name="proxies" rows="5">{{.ProxiesString}}</textarea>
                             </div>
                         </fieldset>
                     </details>
                     
-                    <button type="submit">Start Scraping</button>
+                    <button type="submit">Iniciar coleta</button>
                 </form>
             </div>
             <div class="content">
-                <div class="section-heading"><h2>Your jobs</h2><p>Follow your searches and download the results.</p></div>
-                <div id="spinner" class="spinner htmx-indicator" role="status">Updating jobs…</div>
+                <div class="section-heading"><h2>Suas buscas</h2><p>Acompanhe suas buscas e baixe os resultados.</p></div>
+                <div id="spinner" class="spinner htmx-indicator" role="status">Atualizando buscas…</div>
                 <div class="table-container">
                 <table id="job-table">
                     <thead>
                         <tr>
-                            <th class="job-id">Job ID</th>
-                            <th>Job Name</th>
-                            <th>Job Date</th>
-                            <th>Status</th>
-                            <th>Actions</th>
+                            <th class="job-id">ID da busca</th>
+                            <th>Nome da busca</th>
+                            <th>Data da busca</th>
+                            <th>Situação</th>
+                            <th>Ações</th>
                         </tr>
                     </thead>
                     <tbody id="job-tbody" hx-get="/jobs" hx-trigger="load" hx-swap="outerHTML">

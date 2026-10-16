@@ -287,13 +287,13 @@ func (s *Server) scrape(w http.ResponseWriter, r *http.Request) {
 
 	maxTime, err := time.ParseDuration(maxTimeStr)
 	if err != nil {
-		http.Error(w, "invalid max time", http.StatusUnprocessableEntity)
+		http.Error(w, "Tempo máximo inválido. Use um valor como 10m.", http.StatusUnprocessableEntity)
 
 		return
 	}
 
 	if maxTime < time.Minute*3 {
-		http.Error(w, "max time must be more than 3m", http.StatusUnprocessableEntity)
+		http.Error(w, "O tempo máximo deve ser de pelo menos 3 minutos.", http.StatusUnprocessableEntity)
 
 		return
 	}
@@ -302,7 +302,7 @@ func (s *Server) scrape(w http.ResponseWriter, r *http.Request) {
 
 	keywordsStr, ok := r.Form["keywords"]
 	if !ok {
-		http.Error(w, "missing keywords", http.StatusUnprocessableEntity)
+		http.Error(w, "Informe os termos de busca.", http.StatusUnprocessableEntity)
 
 		return
 	}
@@ -321,7 +321,7 @@ func (s *Server) scrape(w http.ResponseWriter, r *http.Request) {
 
 	newJob.Data.Zoom, err = strconv.Atoi(r.Form.Get("zoom"))
 	if err != nil {
-		http.Error(w, "invalid zoom", http.StatusUnprocessableEntity)
+		http.Error(w, "Zoom inválido.", http.StatusUnprocessableEntity)
 
 		return
 	}
@@ -332,7 +332,7 @@ func (s *Server) scrape(w http.ResponseWriter, r *http.Request) {
 
 	newJob.Data.Radius, err = strconv.Atoi(r.Form.Get("radius"))
 	if err != nil {
-		http.Error(w, "invalid radius", http.StatusUnprocessableEntity)
+		http.Error(w, "Raio inválido.", http.StatusUnprocessableEntity)
 
 		return
 	}
@@ -342,7 +342,7 @@ func (s *Server) scrape(w http.ResponseWriter, r *http.Request) {
 
 	newJob.Data.Depth, err = strconv.Atoi(r.Form.Get("depth"))
 	if err != nil {
-		http.Error(w, "invalid depth", http.StatusUnprocessableEntity)
+		http.Error(w, "Profundidade inválida.", http.StatusUnprocessableEntity)
 
 		return
 	}
@@ -364,7 +364,7 @@ func (s *Server) scrape(w http.ResponseWriter, r *http.Request) {
 
 	err = newJob.Validate()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+		http.Error(w, traduzirErroFormulario(err), http.StatusUnprocessableEntity)
 
 		return
 	}
@@ -699,8 +699,24 @@ func renderJSON(w http.ResponseWriter, code int, data any) {
 	_ = json.NewEncoder(w).Encode(data)
 }
 
-func formatDate(t time.Time) string {
-	return t.Format("Jan 02, 2006 15:04:05")
+func traduzirErroFormulario(err error) string {
+	mensagens := map[string]string{
+		"missing id":              "Identificador da busca ausente.",
+		"missing name":            "Informe o nome da busca.",
+		"missing status":          "Situação da busca ausente.",
+		"missing date":            "Data da busca ausente.",
+		"missing keywords":        "Informe os termos de busca.",
+		"missing lang":            "Informe o idioma.",
+		"invalid lang":            "O idioma deve conter dois caracteres.",
+		"missing depth":           "Informe a profundidade.",
+		"missing max time":        "Informe o tempo máximo da busca.",
+		"missing geo coordinates": "Informe a latitude e a longitude para usar o modo rápido.",
+	}
+	if mensagem, ok := mensagens[err.Error()]; ok {
+		return mensagem
+	}
+
+	return "Não foi possível validar a busca. Confira os campos informados."
 }
 
 func securityHeaders(next http.Handler) http.Handler {
