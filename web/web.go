@@ -180,18 +180,19 @@ func (s *Server) Start(ctx context.Context) error {
 }
 
 type formData struct {
-	Name     string
-	MaxTime  string
-	Keywords []string
-	Language string
-	Zoom     int
-	FastMode bool
-	Radius   int
-	Lat      string
-	Lon      string
-	Depth    int
-	Email    bool
-	Proxies  []string
+	Name         string
+	MaxTime      string
+	Keywords     []string
+	Language     string
+	Zoom         int
+	FastMode     bool
+	Radius       int
+	Lat          string
+	Lon          string
+	Depth        int
+	Email        bool
+	ExtraReviews bool
+	Proxies      []string
 }
 
 type ctxKey string
@@ -346,6 +347,7 @@ func (s *Server) scrape(w http.ResponseWriter, r *http.Request) {
 	}
 
 	newJob.Data.Email = r.Form.Get("email") == "on"
+	newJob.Data.ExtraReviews = r.Form.Get("extra_reviews") == "on"
 
 	proxies := strings.Split(r.Form.Get("proxies"), "\n")
 	if len(proxies) > 0 {

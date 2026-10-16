@@ -192,6 +192,10 @@ components:
           type: integer
         email:
           type: boolean
+        extra_reviews:
+          type: boolean
+          default: false
+          description: Enable experimental extended review collection.
         max_time:
           type: integer
         proxies:
@@ -243,6 +247,9 @@ components:
           type: integer
         email:
           type: boolean
+        extra_reviews:
+          type: boolean
+          description: Whether extended review collection is enabled for this job.
         max_time:
           type: integer
         proxies:

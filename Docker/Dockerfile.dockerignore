@@ -1,0 +1,12 @@
+.git
+**/.vshistory
+**/.vs
+**/_ReSharper.Caches
+bin
+tmp
+webdata
+gmapsdata
+.env
+.env.*
+coverage.out
+coverage.html

@@ -191,6 +191,10 @@ func TestIndexScrapeFormReplacesPaginatedJobs(t *testing.T) {
 	if !strings.Contains(body, `hx-swap="outerHTML"`) {
 		t.Fatal("scrape form must replace the paginated job body")
 	}
+
+	if !strings.Contains(body, `id="extra_reviews" name="extra_reviews"`) {
+		t.Fatal("formulario deve permitir selecionar avaliacoes extras")
+	}
 }
 
 func TestScrapeRendersFirstPageAfterCreatingJob(t *testing.T) {
@@ -229,6 +233,48 @@ func TestScrapeRendersFirstPageAfterCreatingJob(t *testing.T) {
 
 	if rows := strings.Count(body, "<tr>"); rows != 20 {
 		t.Fatalf("got %d rows, want 20", rows)
+	}
+}
+
+func TestScrapeExtraReviews(t *testing.T) {
+	for _, habilitado := range []bool{false, true} {
+		t.Run(fmt.Sprintf("extra_reviews=%t", habilitado), func(t *testing.T) {
+			repositorio := &mutableJobRepo{}
+			servidor := newTestServerWithRepo(t, repositorio)
+			formulario := url.Values{
+				"name": {"avaliacoes"}, "maxtime": {"4m"}, "keywords": {"coffee"},
+				"lang": {"en"}, "zoom": {"15"}, "radius": {"10000"}, "depth": {"10"},
+			}
+			if habilitado {
+				formulario.Set("extra_reviews", "on")
+			}
+			requisicao := httptest.NewRequest(http.MethodPost, "/scrape", strings.NewReader(formulario.Encode()))
+			requisicao.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			resposta := httptest.NewRecorder()
+			servidor.scrape(resposta, requisicao)
+			if resposta.Code != http.StatusOK {
+				t.Fatalf("status inesperado: %d: %s", resposta.Code, resposta.Body.String())
+			}
+			if len(repositorio.jobs) != 1 || repositorio.jobs[0].Data.ExtraReviews != habilitado {
+				t.Fatalf("opcao nao persistida: %+v", repositorio.jobs)
+			}
+		})
+	}
+}
+
+func TestApiAceitaExtraReviews(t *testing.T) {
+	repositorio := &mutableJobRepo{}
+	servidor := newTestServerWithRepo(t, repositorio)
+	corpo := `{"name":"avaliacoes","keywords":["coffee"],"lang":"en","depth":10,"max_time":240,"extra_reviews":true}`
+	requisicao := httptest.NewRequest(http.MethodPost, "/api/v1/jobs", strings.NewReader(corpo))
+	requisicao.Header.Set("Content-Type", "application/json")
+	resposta := httptest.NewRecorder()
+	servidor.apiScrape(resposta, requisicao)
+	if resposta.Code != http.StatusCreated {
+		t.Fatalf("status inesperado: %d: %s", resposta.Code, resposta.Body.String())
+	}
+	if len(repositorio.jobs) != 1 || !repositorio.jobs[0].Data.ExtraReviews {
+		t.Fatalf("opcao nao persistida pela API: %+v", repositorio.jobs)
 	}
 }
 
